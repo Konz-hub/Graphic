@@ -1,106 +1,104 @@
-#include <GL/glut.h>
-#include <iostream>
-#include <SOIL/SOIL.h> // For loading image textures
+#include <gl/glut.h>
+#include <gl/GL.h>
+#include <gl/GLU.h>
+#include <cmath>
 
-// Texture IDs
-GLuint floorTexture, wallTexture, windowTexture, robotTexture, plantTexture;
+#define Screen_Width 1280
+#define Screen_Height 900
+#define PI 3.14159265358979323846 // Define Pi
 
-// Function to load an image texture
-void loadImageTexture(GLuint& texture, const char* filePath) {
-    glGenTextures(1, &texture);
-    glBindTexture(GL_TEXTURE_2D, texture);
-
-    // Load the image using SOIL
-    unsigned char* image = SOIL_load_image(filePath, nullptr, nullptr, 0, SOIL_LOAD_RGBA);
-    if (!image) {
-        std::cerr << "Failed to load texture: " << filePath << std::endl;
-        return;
-    }
-
-    // Generate the texture
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, SOIL_last_width(), SOIL_last_height(), 0, GL_RGBA, GL_UNSIGNED_BYTE, image);
-    glGenerateMipmap(GL_TEXTURE_2D);
-
-    // Set texture parameters
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-    SOIL_free_image_data(image);
+void initGL() {
+	glClearColor(0.0, 0.0, 0.0, 1.0); // Set background color to black with full opacity
+	glMatrixMode(GL_PROJECTION);
+	glLoadIdentity();
+	gluOrtho2D(0.0, Screen_Width, 0.0, Screen_Height); // Set 2D orthographic projection
 }
 
-// Function to draw a textured rectangle
-void drawTexturedQuad(GLuint texture, float x1, float y1, float x2, float y2) {
-    glBindTexture(GL_TEXTURE_2D, texture);
-    glBegin(GL_QUADS);
-    glTexCoord2f(0.0f, 0.0f); glVertex2f(x1, y1);
-    glTexCoord2f(1.0f, 0.0f); glVertex2f(x2, y1);
-    glTexCoord2f(1.0f, 1.0f); glVertex2f(x2, y2);
-    glTexCoord2f(0.0f, 1.0f); glVertex2f(x1, y2);
-    glEnd();
+void drawScene() {
+	glClear(GL_COLOR_BUFFER_BIT); // Clear the color buffer
+
+	// Draw the back wall (dark gray)
+	glColor3f(0.1f, 0.1f, 0.1f);
+	glBegin(GL_QUADS);
+	glVertex2f(300.0f, 400.0f); // Bottom-left corner
+	glVertex2f(1000.0f, 400.0f); // Bottom-right corner
+	glVertex2f(1000.0f, 900.0f); // Top-right corner
+	glVertex2f(300.0f, 900.0f); // Top-left corner
+	glEnd();
+
+	// Draw the floor (medium gray)
+	glColor3f(0.2f, 0.2f, 0.2f);
+	glBegin(GL_QUADS);
+	glVertex2f(0.0f, 0.0f); // Bottom-left corner
+	glVertex2f(Screen_Width, 0.0f); // Bottom-right corner
+	glVertex2f(1000.0f, 400.0f); // Top-right corner
+	glVertex2f(300.0f, 400.0f); // Top-left corner
+	glEnd();
+
+	// Draw the left wall (dark gray)
+	glColor3f(0.15f, 0.15f, 0.15f);
+	glBegin(GL_QUADS);
+	glVertex2f(0.0f, 0.0f); // Bottom-left corner
+	glVertex2f(300.0f, 400.0f); // Top-right corner
+	glVertex2f(300.0f, 900.0f); // Top-left corner
+	glVertex2f(0.0f, 900.0f); // Bottom-right corner
+	glEnd();
+
+	// Draw the right wall (dark gray)
+	glColor3f(0.15f, 0.15f, 0.15f);
+	glBegin(GL_QUADS);
+	glVertex2f(Screen_Width, 0.0f); // Bottom-right corner
+	glVertex2f(1000.0f, 400.0f); // Top-left corner
+	glVertex2f(1000.0f, 900.0f); // Top-right corner
+	glVertex2f(Screen_Width, 900.0f); // Bottom-left corner
+	glEnd();
+
+	// Draw the light source (white rectangle)
+	glColor3f(1.0f, 1.0f, 1.0f);
+	glBegin(GL_QUADS);
+	glVertex2f(600.0f, 850.0f); // Bottom-left corner
+	glVertex2f(680.0f, 850.0f); // Bottom-right corner
+	glVertex2f(680.0f, 870.0f); // Top-right corner
+	glVertex2f(600.0f, 870.0f); // Top-left corner
+	glEnd();
+
+	// Draw the circle in the center (light gray) using Pi
+	glColor3f(0.5f, 0.5f, 0.5f);
+	float centerX = Screen_Width / 2.0f;
+	float centerY = Screen_Height / 2.0f + 50.0f; // Slightly higher
+	float radius = 30.0f; // Slightly larger
+	int numSegments = 100;
+	glBegin(GL_LINE_LOOP);
+	for (int i = 0; i < numSegments; i++) {
+		float theta = 2.0f * PI * float(i) / float(numSegments);
+		float x = radius * cos(theta);
+		float y = radius * sin(theta);
+		glVertex2f(centerX + x, centerY + y);
+	}
+	glEnd();
+
+	// Draw the cross inside the circle (light gray)
+	glColor3f(0.5f, 0.5f, 0.5f);
+	glBegin(GL_LINES);
+	// Horizontal line
+	glVertex2f(centerX - radius, centerY);
+	glVertex2f(centerX + radius, centerY);
+	// Vertical line
+	glVertex2f(centerX, centerY - radius);
+	glVertex2f(centerX, centerY + radius);
+	glEnd();
+
+	glutSwapBuffers(); // Swap the front and back buffers
 }
 
-// Display callback function
-void display() {
-    glClear(GL_COLOR_BUFFER_BIT);
-
-    // Enable 2D textures
-    glEnable(GL_TEXTURE_2D);
-
-    // Draw floor
-    drawTexturedQuad(floorTexture, -1.0f, -0.5f, 1.0f, 0.0f);
-
-    // Draw walls
-    drawTexturedQuad(wallTexture, -1.0f, 0.0f, -0.8f, 1.0f); // Left wall
-    drawTexturedQuad(wallTexture, 0.8f, 0.0f, 1.0f, 1.0f);   // Right wall
-
-    // Draw window
-    drawTexturedQuad(windowTexture, -0.5f, 0.5f, 0.5f, 0.9f);
-
-    // Draw robot
-    drawTexturedQuad(robotTexture, -0.2f, -0.4f, 0.2f, -0.1f);
-
-    // Draw plant
-    drawTexturedQuad(plantTexture, -0.4f, -0.5f, -0.3f, -0.3f);
-
-    glDisable(GL_TEXTURE_2D);
-
-    glutSwapBuffers();
-}
-
-// Reshape callback function
-void reshape(int width, int height) {
-    glViewport(0, 0, width, height);
-    glMatrixMode(GL_PROJECTION);
-    glLoadIdentity();
-    gluOrtho2D(-1.0, 1.0, -1.0, 1.0); // Set orthographic projection
-    glMatrixMode(GL_MODELVIEW);
-    glLoadIdentity();
-}
-
-// Main function
 int main(int argc, char** argv) {
-    // Initialize GLUT
-    glutInit(&argc, argv);
-    glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB);
-    glutInitWindowSize(800, 600);
-    glutCreateWindow("2D Space Station Hallway");
-
-    // Load textures
-    loadImageTexture(floorTexture, "textures/floor.png");  // Floor texture
-    loadImageTexture(wallTexture, "textures/wall.png");   // Wall texture
-    loadImageTexture(windowTexture, "textures/window.png"); // Window texture
-    loadImageTexture(robotTexture, "textures/robot.png"); // Robot texture
-    loadImageTexture(plantTexture, "textures/plant.png"); // Plant texture
-
-    // Set callback functions
-    glutDisplayFunc(display);
-    glutReshapeFunc(reshape);
-
-    // Enter the GLUT event loop
-    glutMainLoop();
-
-    return 0;
+	glutInit(&argc, argv);
+	glutInitDisplayMode(GLUT_RGB | GLUT_DOUBLE);
+	glutInitWindowSize(Screen_Width, Screen_Height);
+	glutCreateWindow("Scene 1: Wall and Floor");
+	initGL();
+	glutDisplayFunc(drawScene);
+	glutMainLoop();
+	return 0;
 }
 
